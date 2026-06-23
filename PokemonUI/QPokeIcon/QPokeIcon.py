@@ -1,15 +1,15 @@
 from typing import Union
-from PyQt6.QtCore import Qt, pyqtProperty, pyqtSignal, QSize
-from PyQt6.QtGui import (QPixmap, QPainter, QImage, QPainterPath,
+from PySide6.QtCore import Qt, Property, Signal, QSize
+from PySide6.QtGui import (QPixmap, QPainter, QImage, QPainterPath,
                          QImageReader, QMovie)
-from PyQt6.QtWidgets import QLabel, QWidget
+from PySide6.QtWidgets import QLabel, QWidget
 
 from qfluentwidgets.common.overload import singledispatchmethod
 
 
 class PokeIcon(QLabel):
 
-    clicked = pyqtSignal()
+    clicked = Signal()
 
     @singledispatchmethod
     def __init__(self,
@@ -162,7 +162,7 @@ class PokeIcon(QLabel):
         painter.setClipPath(path)
         painter.drawImage(self.rect(), image)
 
-    @pyqtProperty(int)
+    @Property(int)
     def topLeftRadius(self):
         return self._topLeftRadius
 
@@ -170,7 +170,7 @@ class PokeIcon(QLabel):
     def topLeftRadius(self, radius: int):
         self.setBorderRadius(radius, self.topRightRadius, self.bottomLeftRadius, self.bottomRightRadius)
 
-    @pyqtProperty(int)
+    @Property(int)
     def topRightRadius(self):
         return self._topRightRadius
 
@@ -178,7 +178,7 @@ class PokeIcon(QLabel):
     def topRightRadius(self, radius: int):
         self.setBorderRadius(self.topLeftRadius, radius, self.bottomLeftRadius, self.bottomRightRadius)
 
-    @pyqtProperty(int)
+    @Property(int)
     def bottomLeftRadius(self):
         return self._bottomLeftRadius
 
@@ -186,7 +186,7 @@ class PokeIcon(QLabel):
     def bottomLeftRadius(self, radius: int):
         self.setBorderRadius(self.topLeftRadius, self.topRightRadius, radius, self.bottomRightRadius)
 
-    @pyqtProperty(int)
+    @Property(int)
     def bottomRightRadius(self):
         return self._bottomRightRadius
 
