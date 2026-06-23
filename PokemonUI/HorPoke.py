@@ -1,9 +1,9 @@
 # coding:utf-8
 import sys
 
-from PyQt6.QtCore import Qt, QPoint, QSize, QUrl, QRect, QPropertyAnimation
-from PyQt6.QtGui import QIcon, QFont, QColor, QPainter
-from PyQt6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGraphicsOpacityEffect
+from PySide6.QtCore import Qt, QPoint, QSize, QUrl, QRect, QPropertyAnimation
+from PySide6.QtGui import QIcon, QFont, QColor, QPainter
+from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGraphicsOpacityEffect
 
 from qfluentwidgets import (IconWidget, BodyLabel, CaptionLabel, PushButton,
                             TransparentToolButton, FluentIcon, ImageLabel, isDarkTheme, SimpleCardWidget,

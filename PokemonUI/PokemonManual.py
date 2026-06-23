@@ -1,10 +1,11 @@
 # coding:utf-8
 import sys
+from pathlib import Path
 
-from PyQt6.QtCore import Qt, pyqtSignal, QEasingCurve, QUrl
-from PyQt6.QtGui import QIcon, QDesktopServices
-from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QFrame, QWidget
+from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl
+from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QFrame, QWidget
 from qframelesswindow import FramelessWindow, TitleBar
 
 from PokemonUI.Pages.Library import LibraryInterface
@@ -14,9 +15,14 @@ from qfluentwidgets import (NavigationBar, NavigationItemPosition, MessageBox,
                             isDarkTheme, PopUpAniStackedWidget)
 
 
+DEFAULT_ICON_RESOURCE_DIR = "PokeOpalIcon"
+HD_ICON_RESOURCE_DIR = "pokemonIcon"
+RESOURCE_DIR = Path(__file__).resolve().parent / "resource"
+
+
 class StackedWidget(QFrame):
 
-    currentChanged = pyqtSignal(int)
+    currentChanged = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -105,8 +111,9 @@ class IodOpenGLFrame(QOpenGLWidget):
 
 class Window(FramelessWindow):
 
-    def __init__(self):
+    def __init__(self, icon_resource_dir=DEFAULT_ICON_RESOURCE_DIR):
         super().__init__()
+        self.icon_resource_dir = icon_resource_dir
         self.setTitleBar(CustomTitleBar(self))
 
         self.hBoxLayout = QHBoxLayout(self)
@@ -116,8 +123,9 @@ class Window(FramelessWindow):
         self.videoInterface = QWidget(self)
         self.pokeInterface = IodOpenGLFrame(self.videoInterface)
 
-        self.libraryInterface = LibraryInterface(parent=self)
-        self.pokeDescInterface = PokeDescInterface()
+        self.libraryInterface = LibraryInterface(parent=self, icon_resource_dir=self.icon_resource_dir)
+        self.pokeDescInterface = PokeDescInterface(icon_resource_dir=self.icon_resource_dir)
+        self.pokeDescInterface.backRequested.connect(lambda: self.switchTo(self.libraryInterface))
 
         # initialize layout
         self.initLayout()
@@ -158,7 +166,7 @@ class Window(FramelessWindow):
 
     def initWindow(self):
         self.resize(900, 700)
-        self.setWindowIcon(QIcon('../resource/logo.png'))
+        self.setWindowIcon(QIcon(str(RESOURCE_DIR / "logo.png")))
         self.setWindowTitle('宝可梦助手')
         self.titleBar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
 
@@ -180,7 +188,7 @@ class Window(FramelessWindow):
 
     def setQss(self):
         color = 'dark' if isDarkTheme() else 'light'
-        with open(f'resource/{color}/demo.qss', encoding='utf-8') as f:
+        with open(RESOURCE_DIR / color / "demo.qss", encoding='utf-8') as f:
             self.setStyleSheet(f.read())
 
     def switchTo(self, widget):
@@ -193,7 +201,7 @@ class Window(FramelessWindow):
     def showMessageBox(self):
         w = MessageBox(
             '作者信息',
-            'kkkling@QLU,青岛崂山实验室',
+            'kkkling@QLU',
             self
         )
         w.yesButton.setText('访问宝可梦官网')
@@ -203,8 +211,12 @@ class Window(FramelessWindow):
             QDesktopServices.openUrl(QUrl("https://www.pokemon.cn/"))
 
 
-if __name__ == '__main__':
+def main(icon_resource_dir=DEFAULT_ICON_RESOURCE_DIR):
     app = QApplication(sys.argv)
-    w = Window()
+    w = Window(icon_resource_dir=icon_resource_dir)
     w.show()
     sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()
