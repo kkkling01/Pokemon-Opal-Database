@@ -4,11 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-import pandas as pd
-
 
 def _has_value(value) -> bool:
-    return value is not None and not pd.isna(value) and str(value).strip() != ""
+    return value is not None and value == value and str(value).strip() != ""
 
 
 def _text(value) -> str:
@@ -116,44 +114,50 @@ class SkillDetail:
 class PokemonDataStore:
     def __init__(self, data_dir: Optional[Path] = None):
         self.data_dir = data_dir or Path(__file__).resolve().parents[1] / "resource" / "pokemon" / "pokemonData"
-        self._pokedex_df = None
+        self._pokedex_rows = None
         self._feature_desc_by_name = None
-        self._evolution_df = None
+        self._evolution_rows = None
         self._root_by_name = None
-        self._skill_df = None
+        self._skill_rows = None
         self._skill_details = None
         self._pokemon_records = None
         self._pokemon_by_name = None
         self._skill_detail_by_name = None
 
     @property
-    def pokedex_df(self):
-        if self._pokedex_df is None:
-            self._pokedex_df = pd.read_csv(
-                self.data_dir / "蛋白石图鉴-图鉴.csv",
-                converters={"序号": str},
-            )
-        return self._pokedex_df
+    def pokedex_rows(self):
+        if self._pokedex_rows is None:
+            self._pokedex_rows = self._read_dict_rows("蛋白石图鉴-图鉴.csv")
+        return self._pokedex_rows
 
     @property
-    def evolution_df(self):
-        if self._evolution_df is None:
-            self._evolution_df = pd.read_csv(self.data_dir / "蛋白石图鉴-进化.csv")
-        return self._evolution_df
+    def evolution_rows(self):
+        if self._evolution_rows is None:
+            self._evolution_rows = self._read_dict_rows("蛋白石图鉴-进化.csv")
+        return self._evolution_rows
 
     @property
-    def skill_df(self):
-        if self._skill_df is None:
-            self._skill_df = pd.read_csv(self.data_dir / "蛋白石图鉴-升级招式.csv")
-        return self._skill_df
+    def skill_rows(self):
+        if self._skill_rows is None:
+            self._skill_rows = self._read_list_rows("蛋白石图鉴-升级招式.csv")
+        return self._skill_rows
+
+    def _read_dict_rows(self, filename: str) -> List[Dict[str, str]]:
+        with open(self.data_dir / filename, encoding="utf-8-sig", newline="") as file:
+            return list(csv.DictReader(file))
+
+    def _read_list_rows(self, filename: str) -> List[List[str]]:
+        with open(self.data_dir / filename, encoding="utf-8-sig", newline="") as file:
+            reader = csv.reader(file)
+            next(reader, None)
+            return list(reader)
 
     @property
     def feature_desc_by_name(self) -> Dict[str, str]:
         if self._feature_desc_by_name is None:
-            data = pd.read_csv(self.data_dir / "蛋白石图鉴-特性.csv")
             self._feature_desc_by_name = {
                 _text(row.get("特性cn")): _text(row.get("描述"))
-                for _, row in data.iterrows()
+                for row in self._read_dict_rows("蛋白石图鉴-特性.csv")
                 if _has_value(row.get("特性cn"))
             }
         return self._feature_desc_by_name
@@ -161,10 +165,9 @@ class PokemonDataStore:
     @property
     def root_by_name(self) -> Dict[str, str]:
         if self._root_by_name is None:
-            data = pd.read_csv(self.data_dir / "PokemonRoot.csv")
             self._root_by_name = {
                 _text(row.get("叶精灵")): _text(row.get("根精灵"))
-                for _, row in data.iterrows()
+                for row in self._read_dict_rows("PokemonRoot.csv")
                 if _has_value(row.get("叶精灵"))
             }
         return self._root_by_name
@@ -173,7 +176,7 @@ class PokemonDataStore:
         if self._pokemon_records is None:
             self._pokemon_records = [
                 PokemonRecord.from_row(row)
-                for _, row in self.pokedex_df.iterrows()
+                for row in self.pokedex_rows
                 if _has_value(row.get("名称CN"))
             ]
         return self._pokemon_records
@@ -197,11 +200,10 @@ class PokemonDataStore:
         return self.root_by_name.get(name, name)
 
     def get_evolution_targets(self, from_name: str) -> List[EvolutionTarget]:
-        rows = self.evolution_df[self.evolution_df["进化前"] == from_name]
-        if rows.empty:
+        row = next((row for row in self.evolution_rows if _text(row.get("进化前")) == from_name), None)
+        if row is None:
             return []
 
-        row = rows.iloc[0]
         targets = []
         for index in range(9):
             to_name = _text(row.get(f"进化后-{index}"))
@@ -234,20 +236,19 @@ class PokemonDataStore:
                 yield target
 
     def get_level_up_skills(self, pokemon_name: str) -> List[LevelUpSkill]:
-        rows = self.skill_df[self.skill_df["名称"] == pokemon_name]
-        if rows.empty:
+        row = next((row for row in self.skill_rows if len(row) > 0 and _text(row[0]) == pokemon_name), None)
+        if row is None:
             return []
 
-        row = rows.iloc[0]
         skills = []
         level_index = 2
         skill_index = 4
 
-        while skill_index < len(row) and _has_value(row.iloc[skill_index]):
+        while skill_index < len(row) and _has_value(row[skill_index]):
             skills.append(
                 LevelUpSkill(
-                    level=_int(row.iloc[level_index]),
-                    name=_text(row.iloc[skill_index]),
+                    level=_int(row[level_index] if level_index < len(row) else ""),
+                    name=_text(row[skill_index]),
                 )
             )
             level_index += 3
