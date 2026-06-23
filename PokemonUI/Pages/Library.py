@@ -1,11 +1,10 @@
-from pathlib import Path
-
 from PySide6.QtCore import Qt, Signal, QEasingCurve, QObject, QThread, Slot, QTimer
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLayout, QStackedLayout
 
 from PokemonUI.QPokeIcon.QPokeIcon import PokeIcon
 from PokemonUI.Utils.PokemonDataStore import get_pokemon_data_store
+from PokemonUI.paths import ATTRIBUTE_ICON_DIR
 from qfluentwidgets import (ImageLabel, CaptionLabel, ElevatedCardWidget, SmoothScrollArea,
                             SearchLineEdit, IndeterminateProgressRing, BodyLabel)
 
@@ -13,7 +12,6 @@ import PokemonUI.resource.pokeResource_rc
 
 
 DEFAULT_ICON_RESOURCE_DIR = "PokeOpalIcon"
-ATTRIBUTE_ICON_DIR = Path(__file__).resolve().parents[1] / "resource" / "pokemon" / "AttributeIcon"
 
 
 def attribute_icon_path(attribute: str) -> str:

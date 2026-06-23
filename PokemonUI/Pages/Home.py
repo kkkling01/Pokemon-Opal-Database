@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel
 from qfluentwidgets import ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, PushButton, \
     TransparentToolButton, FluentIcon, PopUpAniStackedWidget
 
+from PokemonUI.paths import pokemon_resource_path
+
 
 class AppCard(CardWidget):
 
@@ -73,7 +75,7 @@ class HomeInterface(ScrollArea):
         for i in range(5):
             self.addCard(parent=self.view,
                          content="noting",
-                         icon="resource/pokemon/GameIcon/PokemonZ.png",
+                         icon=str(pokemon_resource_path("GameIcon", "PokemonZ.png")),
                          title="Test"
                          )
 

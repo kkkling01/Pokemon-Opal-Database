@@ -13,6 +13,7 @@ from PokemonUI.Pages.Home import HomeInterface
 from PokemonUI.Pages.Library import LibraryInterface
 from PokemonUI.Pages.PokeDescInterface import PokeDescInterface
 from PokemonUI.Pages.PokeTestInterface import PokeTestInterface
+from PokemonUI.paths import RESOURCE_DIR
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (NavigationBar, NavigationItemPosition, MessageBox,
                             isDarkTheme, SearchLineEdit,
@@ -22,12 +23,12 @@ from qfluentwidgets import (NavigationBar, NavigationItemPosition, MessageBox,
 #
 # AttrArray = ["一般", "冰", "地面", "妖精", "岩石", "幽灵", "恶", "格斗", "毒", "水", "火", "电", "草", "虫", "超能",
 #              "钢", "飞行", "龙"]
-# PokeAttIcArray = [PokeIcon(QImage("./resource/pokemon/AttributeIcon/" + AName + ".png")) for AName in AttrArray]
+# PokeAttIcArray = [PokeIcon(QImage(str(RESOURCE_DIR / "pokemon" / "AttributeIcon" / f"{AName}.png"))) for AName in AttrArray]
 
 # pokeAttDict = dict(zip(
 #     ["一般", "冰", "地面", "妖精", "岩石", "幽灵", "恶", "格斗", "毒", "水", "火", "电", "草", "虫", "超能",
 #      "钢", "飞行", "龙"],
-#     [PokeIcon(QImage("./resource/pokemon/AttributeIcon/" + AName + ".png")) for AName in
+#     [PokeIcon(QImage(str(RESOURCE_DIR / "pokemon" / "AttributeIcon" / f"{AName}.png"))) for AName in
 #      ["一般", "冰", "地面", "妖精", "岩石", "幽灵", "恶", "格斗", "毒", "水", "火", "电", "草", "虫", "超能",
 #       "钢", "飞行", "龙"]]
 # ))
@@ -228,7 +229,7 @@ class Window(FramelessWindow):
 
     def initWindow(self):
         self.resize(900, 700)
-        self.setWindowIcon(QIcon('./resource/logo.png'))
+        self.setWindowIcon(QIcon(str(RESOURCE_DIR / "logo.png")))
         self.setWindowTitle('宝可梦助手')
         self.titleBar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
 
@@ -251,7 +252,7 @@ class Window(FramelessWindow):
 
     def setQss(self):
         color = 'dark' if isDarkTheme() else 'light'
-        with open(f'resource/{color}/demo.qss', encoding='utf-8') as f:
+        with open(RESOURCE_DIR / color / "demo.qss", encoding='utf-8') as f:
             self.setStyleSheet(f.read())
 
     def switchTo(self, widget):
@@ -286,7 +287,7 @@ if __name__ == '__main__':
 
     w = Window()
     # w.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-    # w.setWindowIcon(QIcon(r'G:/ForProject/FluentTrainForMe/PokemonUI/resource/logo.png'))
+    # w.setWindowIcon(QIcon(str(RESOURCE_DIR / "logo.png")))
     w.show()
     print("开启时间：", time.perf_counter() - appstart)
     sys.exit(app.exec())

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout
 from queue import SimpleQueue
 from ..QPokeIcon.QPokeIcon import PokeIcon
 from PokemonUI.Utils.EvolutionUtils import format_evolution_method
+from PokemonUI.paths import POKEMON_DATA_DIR
 from qfluentwidgets import ScrollArea, SimpleCardWidget, BodyLabel
 
 pokeRiseQueue = SimpleQueue()
@@ -42,8 +43,8 @@ class PokeTestInterface(ScrollArea):
     def __init__(self):
         super().__init__()
 
-        self.pokeRiseData = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-进化.csv")
-        self.pokeNumber = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-图鉴.csv",
+        self.pokeRiseData = pd.read_csv(POKEMON_DATA_DIR / "蛋白石图鉴-进化.csv")
+        self.pokeNumber = pd.read_csv(POKEMON_DATA_DIR / "蛋白石图鉴-图鉴.csv",
                                       converters={u'序号': str}).set_index('名称CN')['序号'].to_dict()
         self.riseDesc = ''
 
