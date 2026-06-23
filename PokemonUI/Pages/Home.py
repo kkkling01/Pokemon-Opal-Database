@@ -1,5 +1,5 @@
-from PyQt6.QtCore import Qt, QEasingCurve, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel
+from PySide6.QtCore import Qt, QEasingCurve, Signal
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel
 
 from qfluentwidgets import ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, PushButton, \
     TransparentToolButton, FluentIcon, PopUpAniStackedWidget
@@ -44,7 +44,7 @@ class AppCard(CardWidget):
 
 
 class HomeInterface(ScrollArea):
-    descriptionSignal = pyqtSignal(str)
+    descriptionSignal = Signal(str)
 
     def __init__(self):
         super().__init__()

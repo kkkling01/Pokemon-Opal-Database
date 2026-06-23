@@ -1,9 +1,10 @@
 import pandas as pd
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout
 from queue import SimpleQueue
-from QPokeIcon import PokeIcon
+from ..QPokeIcon.QPokeIcon import PokeIcon
+from PokemonUI.Utils.EvolutionUtils import format_evolution_method
 from qfluentwidgets import ScrollArea, SimpleCardWidget, BodyLabel
 
 pokeRiseQueue = SimpleQueue()
@@ -16,11 +17,11 @@ class PokeRiseCard(SimpleCardWidget):
         self.setBorderRadius(20)
 
         self.pokeIconStart = PokeIcon(icon)
-        self.pokeIconStart.scaledToHeight(90)
+        self.pokeIconStart.setFixedSize(90, 90)
         self.pokeRiseDesc = BodyLabel(riseDesc)
         self.pokeRiseDesc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pokeIconEnd = PokeIcon(iconRise)
-        self.pokeIconEnd.scaledToHeight(90)
+        self.pokeIconEnd.setFixedSize(90, 90)
         self.setBackgroundColor(QColor(255, 255, 255))
         self.setFixedHeight(130)
         self.setContentsMargins(20, 10, 20, 10)
@@ -29,9 +30,11 @@ class PokeRiseCard(SimpleCardWidget):
         self.initView()
 
     def initView(self):
-        self.hBoxLayout.addWidget(self.pokeIconStart, Qt.AlignmentFlag.AlignLeft)
-        self.hBoxLayout.addWidget(self.pokeRiseDesc, Qt.AlignmentFlag.AlignCenter)
-        self.hBoxLayout.addWidget(self.pokeIconEnd, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.setContentsMargins(24, 10, 24, 10)
+        self.hBoxLayout.setSpacing(18)
+        self.hBoxLayout.addWidget(self.pokeIconStart, 0, Qt.AlignmentFlag.AlignLeft)
+        self.hBoxLayout.addWidget(self.pokeRiseDesc, 1, Qt.AlignmentFlag.AlignCenter)
+        self.hBoxLayout.addWidget(self.pokeIconEnd, 0, Qt.AlignmentFlag.AlignRight)
 
 
 class PokeTestInterface(ScrollArea):
@@ -81,43 +84,13 @@ class PokeTestInterface(ScrollArea):
                     break
                 pokeRiseQueue.put(riseData[(i + 1) * 3])
 
-                if riseData[i * 3 + 4] == '等级':
-                    self.riseDesc = "等级提升至" + riseData[i * 3 + 5] + "级进化为"
-                elif riseData[i * 3 + 4] == '物品':
-                    self.riseDesc = "使用" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '白天携带物品':
-                    self.riseDesc = "白天携带" + riseData[i * 3 + 5] + "升级进化为"
-                elif riseData[i * 3 + 4] == '好感度':
-                    self.riseDesc = "好感度提高后进化为"
-                elif riseData[i * 3 + 4] == '招式':
-                    self.riseDesc = "学会" + riseData[i * 3 + 5] + "后升级进化为"
-                elif riseData[i * 3 + 4] == '好感度白天':
-                    self.riseDesc = "在白天，好感度提升后进化为"
-                elif riseData[i * 3 + 4] == '好感度晚上':
-                    self.riseDesc = "在晚上，好感度提升后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击＞防御':
-                    self.riseDesc = "如果攻击＞防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击＜防御':
-                    self.riseDesc = "如果攻击＜防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击=防御':
-                    self.riseDesc = "如果攻击=防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，随机':
-                    self.riseDesc = "等级提升至" + riseData[i * 3 + 5] + "后概率进化为"
-                elif riseData[i * 3 + 4] == '物品雌性':
-                    self.riseDesc = "宝可梦为雌性时，使用" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级雌性':
-                    self.riseDesc = "宝可梦为雌性时，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级雄性':
-                    self.riseDesc = "宝可梦为雄性时，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '白天携带物':
-                    self.riseDesc = "白天携带" + riseData[i * 3 + 5] + "时，升级进化为"
-                else:
-                    self.riseDesc = "未知进化方式"
+                self.riseDesc = format_evolution_method(riseData[i * 3 + 4], riseData[i * 3 + 5])
 
                 self.vBoxLayout.addWidget(
                     PokeRiseCard(":pokemon/pokemonIcon/" + self.pokeNumber.get(riseData[2]) + ".png",
                                  ":pokemon/pokemonIcon/" + self.pokeNumber.get(riseData[(i + 1) * 3]) + ".png",
                                  self.riseDesc),
+                    0,
                     Qt.AlignmentFlag.AlignTop)
 
     def DeleteLayout(self):

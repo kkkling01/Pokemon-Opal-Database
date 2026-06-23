@@ -2,10 +2,10 @@
 import sys
 import time
 
-from PyQt6.QtCore import Qt, pyqtSignal, QEasingCurve, QUrl
-from PyQt6.QtGui import QIcon, QDesktopServices
-from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QFrame, QWidget
+from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl
+from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QFrame, QWidget
 from qframelesswindow import FramelessWindow, TitleBar
 
 from PokemonUI.Pages.GameDescription import DescriptionInterface
@@ -47,7 +47,7 @@ class Widget(QWidget):
 class StackedWidget(QFrame):
     """ Stacked widget """
 
-    currentChanged = pyqtSignal(int)
+    currentChanged = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)

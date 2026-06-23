@@ -1,15 +1,26 @@
-from queue import SimpleQueue
+from pathlib import Path
 
-import pandas as pd
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout, QProgressBar
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QImage
+from PySide6.QtWidgets import QFrame, QWidget, QVBoxLayout, QHBoxLayout, QProgressBar
 
 from PokemonUI.QPokeIcon.QPokeIcon import PokeIcon
+from PokemonUI.Utils.EvolutionUtils import format_evolution_method
 from PokemonUI.Utils.HeaderCard import HeaderCard, HeaderCardH
+from PokemonUI.Utils.PokemonDataStore import get_pokemon_data_store
 from PokemonUI.Utils.TabCard import TabCard
 from qfluentwidgets import ScrollArea, CaptionLabel, BodyLabel, ImageLabel, \
-    CardWidget, SimpleCardWidget, Flyout, FlyoutAnimationType, FluentIcon
+    CardWidget, SimpleCardWidget, Flyout, FlyoutAnimationType, FluentIcon, TransparentToolButton
+
+import PokemonUI.resource.pokeResource_rc
+
+DEFAULT_ICON_RESOURCE_DIR = "PokeOpalIcon"
+ATTRIBUTE_ICON_DIR = Path(__file__).resolve().parents[1] / "resource" / "pokemon" / "AttributeIcon"
+
+
+def attribute_icon_path(attribute: str) -> str:
+    return str(ATTRIBUTE_ICON_DIR / f"{attribute}.png")
+
 
 StyleSheet = '''
 QProgressBar{
@@ -41,38 +52,48 @@ QProgressBar::chunk {
 
 '''
 
-pokeRiseQueue = SimpleQueue()
-
 
 class PokeRiseCard(SimpleCardWidget):
-    def __init__(self, icon, iconRise, riseDesc, parent=None):
+    def __init__(self, icon, iconRise, riseDesc, fromName='', toName='', onPokemonClicked=None, parent=None):
         super().__init__(parent)
+        self.fromName = fromName
+        self.toName = toName
+        self.onPokemonClicked = onPokemonClicked
 
         self.setBorderRadius(20)
 
         self.pokeIconStart = PokeIcon(icon)
-        self.pokeIconStart.scaledToHeight(90)
+        self.pokeIconStart.setFixedSize(90, 90)
         self.pokeRiseDesc = BodyLabel(riseDesc)
         self.pokeRiseDesc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.pokeIconEnd = PokeIcon(iconRise)
-        self.pokeIconEnd.scaledToHeight(90)
+        self.pokeIconEnd.setFixedSize(90, 90)
         self.setBackgroundColor(QColor(255, 255, 255))
         self.setFixedHeight(130)
         self.setContentsMargins(20, 10, 20, 10)
 
         self.hBoxLayout = QHBoxLayout(self)
+        self.pokeIconStart.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.pokeIconEnd.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.pokeIconStart.clicked.connect(lambda: self._emitPokemonClicked(self.fromName))
+        self.pokeIconEnd.clicked.connect(lambda: self._emitPokemonClicked(self.toName))
         self.initView()
 
     def initView(self):
-        self.hBoxLayout.addWidget(self.pokeIconStart, Qt.AlignmentFlag.AlignLeft)
-        self.hBoxLayout.addWidget(self.pokeRiseDesc, Qt.AlignmentFlag.AlignCenter)
-        self.hBoxLayout.addWidget(self.pokeIconEnd, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.setContentsMargins(24, 10, 24, 10)
+        self.hBoxLayout.setSpacing(18)
+        self.hBoxLayout.addWidget(self.pokeIconStart, 0, Qt.AlignmentFlag.AlignLeft)
+        self.hBoxLayout.addWidget(self.pokeRiseDesc, 1, Qt.AlignmentFlag.AlignCenter)
+        self.hBoxLayout.addWidget(self.pokeIconEnd, 0, Qt.AlignmentFlag.AlignRight)
+
+    def _emitPokemonClicked(self, pokemonName):
+        if self.onPokemonClicked is not None and pokemonName:
+            self.onPokemonClicked(pokemonName)
 
 
 class PokeDescCard(HeaderCardH):
 
     def __init__(self, icon, pokeName, desc, attribute1: str, attribute2: str = '',
-                 attIconPath: str = "./resource/pokemon/AttributeIcon/",
                  parent=None):
         super().__init__(parent)
         self.setTitle("基本信息")
@@ -81,7 +102,7 @@ class PokeDescCard(HeaderCardH):
         self.titleLabel = BodyLabel(pokeName, self)
         self.contentLabel = CaptionLabel(desc, self)
 
-        self.AttributeIcon1 = ImageLabel(attIconPath + attribute1 + ".png", self)
+        self.AttributeIcon1 = ImageLabel(attribute_icon_path(attribute1), self)
         # self.AttributeIcon1 = pokeAttDict.get(attribute1)
         self.AttributeIcon1.scaledToHeight(25)
 
@@ -113,7 +134,7 @@ class PokeDescCard(HeaderCardH):
         self.attrLayout.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.attrLayout.addWidget(self.AttributeIcon1, 0, Qt.AlignmentFlag.AlignRight)
         if attribute2 != '' and attribute2 == attribute2:
-            self.AttributeIcon2 = ImageLabel("./resource/pokemon/AttributeIcon/" + attribute2 + ".png", self)
+            self.AttributeIcon2 = ImageLabel(attribute_icon_path(attribute2), self)
             # self.AttributeIcon2 = pokeAttDict.get(attribute2)
             self.AttributeIcon2.scaledToHeight(25)
             self.attrLayout.addWidget(
@@ -152,8 +173,11 @@ class PokeSkillCard(CardWidget):
 
     def __init__(self, skillLevel, skillName, parent=None):
         super().__init__(parent)
+        self.skillName = skillName
 
         self.setBackgroundColor(QColor(255, 255, 255))
+        self.setClickEnabled(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.titleLabel = BodyLabel((str(int(skillLevel)) + "级" if skillLevel != 1 else "初始学会") + ":" + skillName)
 
@@ -213,30 +237,19 @@ class LocationCard(CardWidget):
         self.localLabel = BodyLabel("查找分布位置")
         self.localLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.vBoxLayout = QVBoxLayout(self)
-        self.vBoxLayout.addWidget(self.localLabel, Qt.AlignmentFlag.AlignCenter)
+        self.vBoxLayout.addWidget(self.localLabel, 0, Qt.AlignmentFlag.AlignCenter)
 
 
 class PokeDescInterface(ScrollArea):
+    backRequested = Signal()
 
-    def __init__(self):
+    def __init__(self, icon_resource_dir=DEFAULT_ICON_RESOURCE_DIR):
         super().__init__()
 
         self.pokeName = ''
-
-        self.pokeFData = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-特性.csv").set_index('特性cn')[
-            '描述'].to_dict()
-
-        self.pokeRiseData = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-进化.csv")
-        self.pokeNumber = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-图鉴.csv",
-                                      converters={u'序号': str}).set_index('名称CN')['序号'].to_dict()
-        self.pokeRoot = pd.read_csv(r"./resource/pokemon/pokemonData/PokemonRoot.csv").set_index('叶精灵')[
-            '根精灵'].to_dict()
+        self.dataStore = get_pokemon_data_store()
+        self.icon_resource_dir = icon_resource_dir
         self.riseDesc = ''
-
-        self.pokeSkill = pd.read_csv(r"./resource/pokemon/pokemonData/蛋白石图鉴-升级招式.csv")
-
-        self.localPoke = LocationCard()
-        self.localPoke.clicked.connect(self.LocalPoke)
 
         self.setFrameShape(QFrame.frameShape(self).NoFrame)
 
@@ -261,102 +274,139 @@ class PokeDescInterface(ScrollArea):
 
     def initView(self, pokeData, pokeImage,
                  pokeDesc='目前没有详细描述'):
+        self.DeleteLayout()
+        self.pokeName = pokeData.name
 
-        self.vBoxLayout.addWidget(PokeDescCard(pokeImage,
-                                               pokeData[2],
-                                               pokeDesc,
-                                               pokeData[3],
-                                               pokeData[4]))
+        self.vBoxLayout.addWidget(self.build_header())
+        self.vBoxLayout.addWidget(self.build_basic_info(pokeData, pokeImage, pokeDesc))
+        self.vBoxLayout.addWidget(self.build_features(pokeData))
+        self.vBoxLayout.addWidget(self.build_stats(pokeData))
+        self.vBoxLayout.addWidget(self.build_evolution(pokeData))
+        self.vBoxLayout.addWidget(self.build_skills(pokeData))
+        self.vBoxLayout.addWidget(self.build_location())
 
-        self.pokeName = pokeData[2]
+    def build_header(self):
+        header = QWidget(self.view)
+        header.setFixedHeight(38)
+        layout = QHBoxLayout(header)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        backButton = TransparentToolButton(FluentIcon.LEFT_ARROW, header)
+        backButton.setFixedSize(38, 38)
+        backButton.setToolTip("返回")
+        backButton.clicked.connect(self.backRequested)
+
+        layout.addWidget(backButton, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        layout.addStretch(1)
+        return header
+
+    def build_basic_info(self, pokeData, pokeImage, pokeDesc):
+        return PokeDescCard(pokeImage,
+                            pokeData.name,
+                            pokeDesc,
+                            pokeData.attribute1,
+                            pokeData.attribute2)
+
+    def build_features(self, pokeData):
         FeatureView = HeaderCard()
         FeatureView.setTitle("特性")
         FeatureView.setBorderRadius(20)
 
-        FeatureView.viewLayout.addWidget(PokeFeatureCard(pokeData[12], self.pokeFData.get(pokeData[12])))
-        if pokeData[13] != '' and pokeData[13] == pokeData[13]:
-            FeatureView.viewLayout.addWidget(PokeFeatureCard(pokeData[13], self.pokeFData.get(pokeData[13])))
-        if pokeData[14] != '' and pokeData[14] == pokeData[14]:
+        FeatureView.viewLayout.addWidget(PokeFeatureCard(pokeData.feature1,
+                                                         self.dataStore.get_feature_desc(pokeData.feature1)))
+        if pokeData.feature2:
+            FeatureView.viewLayout.addWidget(PokeFeatureCard(pokeData.feature2,
+                                                             self.dataStore.get_feature_desc(pokeData.feature2)))
+        if pokeData.hidden_feature:
             FeatureView.viewLayout.addWidget(
-                PokeFeatureCard("隐藏特性：" + pokeData[14], self.pokeFData.get(pokeData[14])))
+                PokeFeatureCard("隐藏特性：" + pokeData.hidden_feature,
+                                self.dataStore.get_feature_desc(pokeData.hidden_feature)))
 
-        self.vBoxLayout.addWidget(FeatureView)
+        return FeatureView
 
-        self.vBoxLayout.addWidget(RaceDescCard(int(pokeData[5]),
-                                               int(pokeData[6]),
-                                               int(pokeData[7]),
-                                               int(pokeData[9]),
-                                               int(pokeData[10]),
-                                               int(pokeData[8])))
+    def build_stats(self, pokeData):
+        return RaceDescCard(pokeData.hp,
+                            pokeData.physical_attack,
+                            pokeData.physical_defense,
+                            pokeData.special_attack,
+                            pokeData.special_defense,
+                            pokeData.speed)
 
+    def build_evolution(self, pokeData):
         RiseView = HeaderCard()
         RiseView.setTitle("进化链")
         RiseView.setBorderRadius(20)
-        pokeRiseQueue.put(self.pokeRoot.get(pokeData[2]))
+        rootName = self.dataStore.get_root_name(pokeData.name)
 
-        while not pokeRiseQueue.empty():
+        for evolution in self.dataStore.iter_evolution_links(rootName):
+            self.riseDesc = format_evolution_method(evolution.method, evolution.value)
+            fromNumber = self.dataStore.get_pokemon_number(evolution.from_name)
+            toNumber = self.dataStore.get_pokemon_number(evolution.to_name)
+            if not fromNumber or not toNumber:
+                continue
 
-            riseData = self.pokeRiseData[self.pokeRiseData['进化前'] == pokeRiseQueue.get()].values[0]
-            if riseData[3] == '' or riseData[3] != riseData[3]:
-                break
-            for i in range(9):
-                if riseData[(i + 1) * 3] == '' or riseData[(i + 1) * 3] != riseData[(i + 1) * 3]:
-                    break
-                pokeRiseQueue.put(riseData[(i + 1) * 3])
+            RiseView.viewLayout.addWidget(
+                PokeRiseCard(self.pokemon_icon_path(fromNumber),
+                             self.pokemon_icon_path(toNumber),
+                             self.riseDesc,
+                             evolution.from_name,
+                             evolution.to_name,
+                             self.show_pokemon_detail),
+                0,
+                Qt.AlignmentFlag.AlignTop)
 
-                if riseData[i * 3 + 4] == '等级':
-                    self.riseDesc = "等级提升至" + riseData[i * 3 + 5] + "级进化为"
-                elif riseData[i * 3 + 4] == '物品':
-                    self.riseDesc = "使用" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '白天携带物品':
-                    self.riseDesc = "白天携带" + riseData[i * 3 + 5] + "升级进化为"
-                elif riseData[i * 3 + 4] == '好感度':
-                    self.riseDesc = "好感度提高后进化为"
-                elif riseData[i * 3 + 4] == '招式':
-                    self.riseDesc = "学会" + riseData[i * 3 + 5] + "后升级进化为"
-                elif riseData[i * 3 + 4] == '好感度白天':
-                    self.riseDesc = "在白天，好感度提升后进化为"
-                elif riseData[i * 3 + 4] == '好感度晚上':
-                    self.riseDesc = "在晚上，好感度提升后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击＞防御':
-                    self.riseDesc = "如果攻击＞防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击＜防御':
-                    self.riseDesc = "如果攻击＜防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，攻击=防御':
-                    self.riseDesc = "如果攻击=防御，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级，随机':
-                    self.riseDesc = "等级提升至" + riseData[i * 3 + 5] + "后概率进化为"
-                elif riseData[i * 3 + 4] == '物品雌性':
-                    self.riseDesc = "宝可梦为雌性时，使用" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级雌性':
-                    self.riseDesc = "宝可梦为雌性时，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '等级雄性':
-                    self.riseDesc = "宝可梦为雄性时，等级提升至" + riseData[i * 3 + 5] + "后进化为"
-                elif riseData[i * 3 + 4] == '白天携带物':
-                    self.riseDesc = "白天携带" + riseData[i * 3 + 5] + "时，升级进化为"
-                else:
-                    self.riseDesc = "未知进化方式"
+        return RiseView
 
-                RiseView.viewLayout.addWidget(
-                    PokeRiseCard(":pokemon/pokemonIcon/" + self.pokeNumber.get(riseData[2]) + ".png",
-                                 ":pokemon/pokemonIcon/" + self.pokeNumber.get(riseData[(i + 1) * 3]) + ".png",
-                                 self.riseDesc),
-                    Qt.AlignmentFlag.AlignTop)
-        self.vBoxLayout.addWidget(RiseView)
+    def pokemon_icon_path(self, number: str) -> str:
+        return f":pokemon/{self.icon_resource_dir}/{number}.png"
 
-        pokeRiseSkill = self.pokeSkill[self.pokeSkill['名称'] == pokeData[2]].values[0]
-
+    def build_skills(self, pokeData):
         RiseSkillView = HeaderCard()
         RiseSkillView.setTitle("升级招式")
         RiseSkillView.setBorderRadius(20)
-        riseFlag = 4
-        while pokeRiseSkill[riseFlag] != '' and pokeRiseSkill[riseFlag] == pokeRiseSkill[riseFlag]:
-            RiseSkillView.viewLayout.addWidget(PokeSkillCard(pokeRiseSkill[riseFlag - 2], pokeRiseSkill[riseFlag]))
-            riseFlag += 3
+        for skill in self.dataStore.get_level_up_skills(pokeData.name):
+            skillCard = PokeSkillCard(skill.level, skill.name)
+            skillCard.clicked.connect(lambda name=skill.name, card=skillCard: self.show_skill_detail(name, card))
+            RiseSkillView.viewLayout.addWidget(skillCard)
 
-        self.vBoxLayout.addWidget(RiseSkillView)
+        return RiseSkillView
 
-        self.vBoxLayout.addWidget(self.localPoke)
+    def show_pokemon_detail(self, pokemonName):
+        pokemon = self.dataStore.get_pokemon(pokemonName)
+        if pokemon is None:
+            return
+
+        self.initView(pokemon, QImage(self.pokemon_icon_path(pokemon.number)))
+        self.verticalScrollBar().setValue(0)
+
+    def show_skill_detail(self, skillName, target):
+        detail = self.dataStore.get_skill_detail(skillName)
+        if detail is None:
+            content = "暂无该招式的详细效果。"
+        else:
+            content = (
+                f"属性：{detail.attribute or '未知'}\n"
+                f"分类：{detail.category or '未知'}\n"
+                f"威力：{detail.power or '-'}\n"
+                f"命中：{detail.accuracy or '-'}\n"
+                f"先制度：{detail.priority or '0'}\n\n"
+                f"{detail.description or '暂无描述。'}"
+            )
+
+        Flyout.create(
+            title=skillName,
+            content=content,
+            target=target,
+            parent=self,
+            isClosable=True,
+            aniType=FlyoutAnimationType.PULL_UP,
+        )
+
+    def build_location(self):
+        self.localPoke = LocationCard()
+        self.localPoke.clicked.connect(self.LocalPoke)
+        return self.localPoke
 
     def LocalPoke(self):
         Flyout.create(
@@ -370,10 +420,10 @@ class PokeDescInterface(ScrollArea):
         )
 
     def DeleteLayout(self):
-        item_list = list(range(self.vBoxLayout.count()))
-        item_list.reverse()
-        for i in item_list:
-            item = self.vBoxLayout.itemAt(i)
-            self.vBoxLayout.removeItem(item)
-            if item.widget():
-                item.widget().deleteLater()
+        while self.vBoxLayout.count():
+            item = self.vBoxLayout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.hide()
+                widget.setParent(None)
+                widget.deleteLater()
