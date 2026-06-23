@@ -1,6 +1,5 @@
 # coding:utf-8
 import sys
-from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
@@ -14,10 +13,10 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (NavigationBar, NavigationItemPosition, MessageBox,
                             isDarkTheme, PopUpAniStackedWidget)
 
+from PokemonUI.paths import RESOURCE_DIR
 
 DEFAULT_ICON_RESOURCE_DIR = "PokeOpalIcon"
 HD_ICON_RESOURCE_DIR = "pokemonIcon"
-RESOURCE_DIR = Path(__file__).resolve().parent / "resource"
 
 
 class StackedWidget(QFrame):
