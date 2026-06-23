@@ -1,6 +1,6 @@
-from PyQt6.QtCore import pyqtProperty
-from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QLabel
+from PySide6.QtCore import Property
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QLabel
 from qfluentwidgets.common.overload import singledispatchmethod
 
 from qfluentwidgets.components.widgets.card_widget import CardSeparator
@@ -57,7 +57,7 @@ class HeaderCard(SimpleCardWidget):
     def _postInit(self):
         pass
 
-    title = pyqtProperty(str, getTitle, setTitle)
+    title = Property(str, getTitle, setTitle)
 
 
 class HeaderCardH(SimpleCardWidget):
@@ -108,4 +108,4 @@ class HeaderCardH(SimpleCardWidget):
     def _postInit(self):
         pass
 
-    title = pyqtProperty(str, getTitle, setTitle)
+    title = Property(str, getTitle, setTitle)
