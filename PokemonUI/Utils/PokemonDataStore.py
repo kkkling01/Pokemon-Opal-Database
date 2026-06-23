@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from PokemonUI.paths import POKEMON_DATA_DIR
+
 
 def _has_value(value) -> bool:
     return value is not None and value == value and str(value).strip() != ""
@@ -113,7 +115,7 @@ class SkillDetail:
 
 class PokemonDataStore:
     def __init__(self, data_dir: Optional[Path] = None):
-        self.data_dir = data_dir or Path(__file__).resolve().parents[1] / "resource" / "pokemon" / "pokemonData"
+        self.data_dir = data_dir or POKEMON_DATA_DIR
         self._pokedex_rows = None
         self._feature_desc_by_name = None
         self._evolution_rows = None
