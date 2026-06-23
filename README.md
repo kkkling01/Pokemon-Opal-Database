@@ -1,3 +1,3 @@
-使用的Fluent Qt，请到官网下载，qfluentwidgets文件夹要与PokemonUI同级，resource文件没有上传
+使用的Fluent Qt，请到官网下载，qfluentwidgets文件夹要与PokemonUI同级，resource文件没有上传，自己去找蛋白石的图标
 
-没做完
+
